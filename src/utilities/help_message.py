@@ -1,4 +1,12 @@
 def help_message():
+    """
+    Prints a help message explaining the various parameter options
+    accessible by the option parser in the
+    algorithm.parameters.params dictionary.
+    
+    :return: Nothing.
+    """
+    
     lines_1 = ["Welcome to PonyGE - Help",
                "-------------------",
                "The following are the available command line args, "
@@ -44,8 +52,9 @@ def help_message():
                                   "requires string such as 'subtree' or "
                                   "direct path string such as "
                                   "'operators.crossover.subtree'"],
-               ["\t--crossover_prob:", "Sets the crossover probability, "
-                                       "requires float, e.g. 0.9"],
+               ["\t--crossover_probability:", "Sets the crossover "
+                                              "probability, requires float, "
+                                              "e.g. 0.9"],
                ["\t--replacement:", "Sets the replacement strategy, requires "
                                     "string such as 'generational' or direct"
                                     "path string such as "
@@ -112,8 +121,12 @@ def help_message():
 
     for line in lines_1:
         print(line)
+    
+    # This simply justifies the print statement such that it is visually
+    # pleasing to look at. Items are printed in alphabetical order.
     col_width = max(len(line[0]) for line in lines_2)
     for line in sorted(lines_2):
         print(" ".join(words.ljust(col_width) for words in line))
+    
     for line in lines_3:
         print(line)

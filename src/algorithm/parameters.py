@@ -130,12 +130,62 @@ params = {
 }
 
 
+def check_int(param, arg):
+    """
+    Checks to ensure the given argument is indeed an int. If not, throws an
+    error.
+    
+    :param param: A parameter from the params dictionary.
+    :param arg: A given input argument.
+    :return: Error if an error occurs, nothing if no error.
+    """
+
+    try:
+        params[param] = int(arg)
+    except:
+        print("\nError: Please define", param, "as int. Value given:", arg)
+        quit()
+
+
+def check_float(param, arg):
+    """
+    Checks to ensure the given argument is indeed a float. If not, throws an
+    error. Also checks to ensure the given float is within the range [0:1].
+    
+    :param param: A parameter from the params dictionary.
+    :param arg: A given input argument.
+    :return: Error if an error occurs, nothing if no error.
+    """
+
+    try:
+        params[param] = float(arg)
+    except:
+        print("\nError: Please define", param, "as float. Value given:", arg)
+        quit()
+    if not 1 >= params[param] >= 0:
+        print("\nError:", param, "outside allowed range [0:1]. Value "
+                                 "given:", arg)
+        quit()
+
+
 def set_params(command_line_args):
+    """
+    This function parses all command line arguments specified by the user.
+    If certain parameters are not set then defaults are used (e.g. random
+    seeds, elite size). Sets the correct imports given command line
+    arguments. Sets correct grammar file and fitness function. Also
+    initialises save folders and tracker lists in utilities.trackers.
+    
+    :param command_line_args: Command line arguments specified by the user.
+    :return: Nothing.
+    """
+    
     from fitness.fitness_wheel import set_fitness_function, set_fitness_params
     from utilities.initialise_run import initialise_run_params
     from utilities.initialise_run import set_param_imports
     from utilities.helper_methods import return_percent
     from utilities.help_message import help_message
+    from representation import grammar
     import getopt
 
     try:
@@ -146,7 +196,7 @@ def set_params(command_line_args):
                                     "max_tree_depth=", "codon_size=",
                                     "selection=", "selection_proportion=",
                                     "tournament_size=", "crossover=",
-                                    "crossover_prob=", "replacement=",
+                                    "crossover_probability=", "replacement=",
                                     "mutation=", "mutation_events=",
                                     "random_seed=", "bnf_grammar=", "problem=",
                                     "problem_suite=", "target_string=",
@@ -170,23 +220,23 @@ def set_params(command_line_args):
 
         # POPULATION OPTIONS
         elif opt == "--population":
-            params['POPULATION_SIZE'] = int(arg)
+            check_int('POPULATION_SIZE', arg)
         elif opt == "--generations":
-            params['GENERATIONS'] = int(arg)
+            check_int('GENERATIONS', arg)
 
         # INDIVIDUAL SIZE
         elif opt == "--max_tree_depth":
-            params['MAX_TREE_DEPTH'] = int(arg)
+            check_int('MAX_TREE_DEPTH', arg)
         elif opt == "--codon_size":
-            params['CODON_SIZE'] = int(arg)
+            check_int('CODON_SIZE', arg)
         elif opt == "--genome_length":
-            params['GENOME_LENGTH'] = int(arg)
+            check_int('GENOME_LENGTH', arg)
 
         # INITIALISATION
         elif opt == "--initialisation":
             params['INITIALISATION'] = arg
         elif opt == "--max_init_depth":
-            params['MAX_INIT_DEPTH'] = int(arg)
+            check_int('MAX_INIT_DEPTH', arg)
         elif opt == "--genome_init":
             params['GENOME_INIT'] = True
             params['INITIALISATION'] = "operators.initialisation.random_init"
@@ -197,46 +247,35 @@ def set_params(command_line_args):
         elif opt == "--invalid_selection":
             params['INVALID_SELECTION'] = arg
         elif opt == "--tournament_size":
-            params['TOURNAMENT_SIZE'] = int(arg)
+            check_int('TOURNAMENT_SIZE', arg)
         elif opt == "--selection_proportion":
-            params['SELECTION_PROPORTION'] = float(arg)
+            check_float('SELECTION_PROPORTION', arg)
 
         # EVALUATION
         elif opt == "--multicore":
             params['MULTIPCORE'] = True
         elif opt == "--cores":
-            params['CORES'] = int(arg)
+            check_int('CORES', arg)
 
         # CROSSOVER
         elif opt == "--crossover":
             params['CROSSOVER'] = arg
-        elif opt == "--crossover_prob":
-            params['CROSSOVER_PROBABILITY'] = float(arg)
+        elif opt == "--crossover_probability":
+            check_float('CROSSOVER_PROBABILITY', arg)
 
         # MUTATION
         elif opt == "--mutation":
             params['MUTATION'] = arg
         elif opt == "--mutation_events":
-            try:
-                params['MUTATION_EVENTS'] = int(arg)
-            except:
-                print("Error: Please define mutation events as int")
-                quit()
+            check_int('MUTATION_EVENTS', arg)
         elif opt == "--mutation_probability":
-            try:
-                params['MUTATION_PROBABILITY'] = float(arg)
-            except:
-                print("Error: Please define mutation probability as float")
-                quit()
-            if not 1 >= params['MUTATION_PROBABILITY'] >= 0:
-                print("Error: Mutation prob outside allowed range [0:1]")
-                quit()
+            check_float('MUTATION_PROBABILITY', arg)
 
         # REPLACEMENT
         elif opt == "--replacement":
             params['REPLACEMENT'] = arg
         elif opt == "--elite_size":
-            params['ELITE_SIZE'] = int(arg)
+            check_int('ELITE_SIZE', arg)
 
         # PROBLEM SPECIFICS
         elif opt == "--bnf_grammar":
@@ -252,7 +291,7 @@ def set_params(command_line_args):
 
         # OPTIONS
         elif opt == "--random_seed":
-            params['RANDOM_SEED'] = int(arg)
+            check_int('RANDOM_SEED', arg)
         elif opt == "--debug":
             params['DEBUG'] = True
         elif opt == "--verbose":
@@ -309,6 +348,11 @@ def set_params(command_line_args):
     # Set problem specifics
     params['GRAMMAR_FILE'], \
     params['ALTERNATE'] = set_fitness_params(params['PROBLEM'], params)
+
+    # Set Grammar File
+    params['BNF_GRAMMAR'] = grammar.Grammar(params['GRAMMAR_FILE'])
+    
+    # Set Fitness Function
     params['FITNESS_FUNCTION'] = set_fitness_function(params['PROBLEM'],
                                                       params['ALTERNATE'])
 
