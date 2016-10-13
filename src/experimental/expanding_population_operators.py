@@ -19,6 +19,7 @@ def dave_selection(population):
         winners.append(competitors[0])
     return winners
 
+
 #Will need to add stuff to operators etc to build this.
 def dave_replacement(new_pop, individuals):
     """Return new pop. The ELITE_SIZE best individuals are appended
