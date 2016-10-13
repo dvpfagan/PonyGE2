@@ -21,11 +21,13 @@ def dave_selection(population):
 
 
 #Will need to add stuff to operators etc to build this.
-def dave_replacement(new_pop, individuals):
+def expanding_population_replacement(new_pop, individuals):
     """Return new pop. The ELITE_SIZE best individuals are appended
     to new pop if they are better than the worst individuals in new
     pop"""
 
+    #These hard coded params will need to be added to params once the code
+    # base has stabelized
     if (len(individuals)+len(new_pop)) > 10000:
         for ind in individuals:
             new_pop.append(copy(ind))
