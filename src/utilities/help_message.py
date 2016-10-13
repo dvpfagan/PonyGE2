@@ -16,6 +16,8 @@ def help_message():
 
     lines_2 = [["\t--help:", "Shows this help message."],
                ["\t--debug:", "Disables saving of all ancillary files."],
+               ["\t--search_loop:", "Sets the desired search loop function."],
+               ["\t--step:", "Sets the desired search step function."],
                ["\t--population:", "Sets the population size, requires int "
                                    "value"],
                ["\t--generations:", "Sets the number of generations, requires"
@@ -34,6 +36,9 @@ def help_message():
                                        "value"],
                ["\t--codon_size:", "Sets the range from 0 to condon_size to "
                                    "be used in genome, requires int value"],
+               ["\t--max_wraps:", "Sets the maximum number of times the "
+                                  "genome mapping process can wrap over the "
+                                  "length of the genome. Requires int value."],
                ["\t--genome_length:", "Sets the maximum length for "
                                       "chromosomes to be initialised to, "
                                       "requires int value"],
@@ -71,10 +76,14 @@ def help_message():
                                     "value"],
                ["\t--bnf_grammar:", "Sets the grammar to be used, requires "
                                     "string"],
-               ["\t--problem:", "Sets the problem to be used. Requires string "
-                                "such as 'regression'"],
-               ["\t--problem_suite:", "For use with regression problems. "
-                                      "Requires string such as 'Dow'"],
+               ["\t--fitness_function:", "Sets the fitness function to be "
+                                         "used. Requires string such as "
+                                         "'regression'"],
+               ["\t--dataset:", "For use with problems that use a dataset. "
+                                "Requires string such as 'Dow'."],
+               ["\t--error_metric:", "Sets the error metric to be used with "
+                                     "regression style problems. Requires "
+                                     "string such as 'mse' or 'rmse'."],
                ["\t--experiment_name:", "Optional parameter to save results "
                                         "in /results/[EXPERIMENT_NAME] "
                                         "folder. If not specified then "
@@ -107,9 +116,7 @@ def help_message():
                                            " cache."],
                ["\t--mutate_duplicates:", "Replaces duplicate individuals with"
                                           " mutated versions. Requires "
-                                          "cache."],
-               ["\t--complete_evals:", "Advanced feature to reuse save "
-                                       "computation from use of cache."]]
+                                          "cache."]]
 
     lines_3 = [
              "----------------------------",

@@ -1,7 +1,6 @@
 from multiprocessing import cpu_count
 from socket import gethostname
-from random import seed
-import time
+
 
 hostname = gethostname().split('.')
 machine_name = hostname[0]
@@ -9,6 +8,10 @@ machine_name = hostname[0]
 
 """Algorithm parameters"""
 params = {
+        # Set default step and search loop functions
+        'SEARCH_LOOP': 'search_loop',
+        'STEP': 'step',
+
         # Evolutionary Parameters
         'POPULATION_SIZE': 500,
         'GENERATIONS': 50,
@@ -17,17 +20,33 @@ params = {
         'EXPERIMENT_NAME': None,
 
         # Class of problem
-        'PROBLEM': "regression",
+        'FITNESS_FUNCTION': "regression",
         # "regression"
         # "string_match"
         # "classification"
 
-        # Select Regression Problem Suite
-        'SUITE': "Vladislavleva4",
+        # Select problem dataset
+        'DATASET': "Vladislavleva4",
         # "Dow"
         # "Keijzer6"
         # "Vladislavleva4"
-
+        
+        # Set grammar file
+        'GRAMMAR_FILE': "Vladislavleva4.bnf",
+        # "Vladislavleva4.bnf"
+        # "Keijzer6.bnf"
+        # "Dow.bnf"
+        # "Banknote.bnf"
+        # "letter.bnf"
+    
+        # Select error metric
+        'ERROR_METRIC': None,
+        # "mse"
+        # "mae"
+        # "rmse"
+        # "hinge"
+        # "inverse_f1_score"
+    
         # Specify String for StringMatch Problem
         'STRING_MATCH_TARGET': "ponyge_rocks",
 
@@ -35,6 +54,7 @@ params = {
         'MAX_TREE_DEPTH': 17,
         'CODON_SIZE': 100000,
         'GENOME_LENGTH': 500,
+        'MAX_WRAPS': 0,
 
         # INITIALISATION
         'INITIALISATION': "operators.initialisation.rhh",
@@ -99,7 +119,7 @@ params = {
         # MULTIPROCESSING
         'MULTICORE': False,
         # Multiprocessing of phenotype evaluations.
-        'CORES': cpu_count() - 1,
+        'CORES': cpu_count(),
 
         # CACHING
         'CACHE': False,
@@ -117,10 +137,6 @@ params = {
         # Removes duplicate individuals from the population by replacing them
         # with mutated versions of the original individual. Hopefully this will
         # encourage diversity in the population.
-        'COMPLETE_EVALS': False,
-        # Using the cache doesn't execute the full number of fitness
-        # evaluations. Use this to continue the run in order to execute the
-        # full number of fitness evaluations.
 
         # Set machine name (useful for doing multiple runs)
         'MACHINE': machine_name,
@@ -128,6 +144,41 @@ params = {
         # Set Random Seed
         'RANDOM_SEED': None
 }
+
+
+def load_params(file_name):
+    """
+    Load in a params text file and set the params dictionary directly.
+     
+    :param file_name: The name/location of a parameters file.
+    :return: Nothing.
+    """
+
+    try:
+        open(file_name, "r")
+    except FileNotFoundError:
+        print("Error: Parameters file not found. Ensure file\n"
+              "       extension is specified, e.g. "
+              "'regression.txt'.")
+        quit()
+
+    with open(file_name, 'r') as parameters:
+        # Read the whole parameters file.
+        content = parameters.readlines()
+
+        for line in content:
+            components = line.split(":")
+            key, value = components[0], components[1].strip()
+           
+            # Evaluate parameters.
+            try:
+                value = eval(value)
+            except:
+                # We can't evaluate, leave value as a string.
+                pass
+            
+            # Set parameter
+            params[key] = value
 
 
 def check_int(param, arg):
@@ -179,11 +230,10 @@ def set_params(command_line_args):
     :param command_line_args: Command line arguments specified by the user.
     :return: Nothing.
     """
-    
-    from fitness.fitness_wheel import set_fitness_function, set_fitness_params
-    from utilities.initialise_run import initialise_run_params
-    from utilities.initialise_run import set_param_imports
-    from utilities.helper_methods import return_percent
+
+    from utilities.algorithm.initialise_run import initialise_run_params
+    from utilities.algorithm.initialise_run import set_param_imports
+    from utilities.fitness.math_functions import return_percent
     from utilities.help_message import help_message
     from representation import grammar
     import getopt
@@ -198,15 +248,17 @@ def set_params(command_line_args):
                                     "tournament_size=", "crossover=",
                                     "crossover_probability=", "replacement=",
                                     "mutation=", "mutation_events=",
-                                    "random_seed=", "bnf_grammar=", "problem=",
-                                    "problem_suite=", "target_string=",
+                                    "random_seed=", "bnf_grammar=",
+                                    "dataset=", "target_string=",
                                     "verbose", "elite_size=", "save_all",
                                     "save_plots", "cache", "lookup_fitness",
                                     "lookup_bad_fitness", "mutate_duplicates",
-                                    "complete_evals", "genome_length=",
+                                    "genome_length=",
                                     "invalid_selection", "silent",
                                     "dont_lookup_fitness", "experiment_name=",
-                                    "multicore", "cores="])
+                                    "multicore", "cores=", "max_wraps=",
+                                    "error_metric=", "fitness_function=",
+                                    "parameters=", "step=", "search_loop="])
     except getopt.GetoptError as err:
         print("Most parameters need a value associated with them \n",
               "Run python ponyge.py --help for more info")
@@ -217,6 +269,16 @@ def set_params(command_line_args):
         if opt == "--help":
             help_message()
             exit()
+
+        # LOAD PARAMETERS FILE
+        elif opt == "--parameters":
+            load_params("../parameters/" + arg)
+
+        # LOAD STEP AND SEARCH LOOP FUNCTIONS
+        elif opt == "--search_loop":
+            params['SEARCH_LOOP'] = arg
+        elif opt == "--step":
+            params['STEP'] = arg
 
         # POPULATION OPTIONS
         elif opt == "--population":
@@ -231,6 +293,8 @@ def set_params(command_line_args):
             check_int('CODON_SIZE', arg)
         elif opt == "--genome_length":
             check_int('GENOME_LENGTH', arg)
+        elif opt == "--max_wraps":
+            check_int('MAX_WRAPS', arg)
 
         # INITIALISATION
         elif opt == "--initialisation":
@@ -280,14 +344,16 @@ def set_params(command_line_args):
         # PROBLEM SPECIFICS
         elif opt == "--bnf_grammar":
             params['GRAMMAR_FILE'] = arg
-        elif opt == "--problem":
-            params['PROBLEM'] = arg
-        elif opt == "--problem_suite":
-            params['SUITE'] = arg
+        elif opt == "--fitness_function":
+            params['FITNESS_FUNCTION'] = arg
+        elif opt == "--dataset":
+            params['DATASET'] = arg
         elif opt == "--target_string":
             params['STRING_MATCH_TARGET'] = arg
         elif opt == "--experiment_name":
             params['EXPERIMENT_NAME'] = arg
+        elif opt == "--error_metric":
+            params['ERROR_METRIC'] = arg
 
         # OPTIONS
         elif opt == "--random_seed":
@@ -308,7 +374,6 @@ def set_params(command_line_args):
             params['CACHE'] = True
             params['LOOKUP_FITNESS'] = True
         elif opt == "--dont_lookup_fitness":
-            params['CACHE'] = True
             params['LOOKUP_FITNESS'] = False
         elif opt == "--lookup_bad_fitness":
             params['LOOKUP_FITNESS'] = False
@@ -316,9 +381,6 @@ def set_params(command_line_args):
         elif opt == "--mutate_duplicates":
             params['LOOKUP_FITNESS'] = False
             params['MUTATE_DUPLICATES'] = True
-        elif opt == "--complete_evals":
-            params['LOOKUP_FITNESS'] = False
-            params['COMPLETE_EVALS'] = True
         else:
             assert False, "Unhandled Option, use --help for available params"
 
@@ -331,12 +393,7 @@ def set_params(command_line_args):
     params['GENERATION_SIZE'] = params['POPULATION_SIZE'] - params[
         'ELITE_SIZE']
 
-    # Set random seed
-    if params['RANDOM_SEED'] is None:
-        params['RANDOM_SEED'] = int(time.clock()*1000000)
-    seed(params['RANDOM_SEED'])
-
-    # Set GENOME_OPERATIONS automatically for faster linear operations
+    # Set GENOME_OPERATIONS automatically for faster linear operations.
     if (params['MUTATION'] == 'operators.mutation.int_flip' or
                 params['MUTATION'] == 'int_flip') and \
             (params['CROSSOVER'] == 'operators.crossover.onepoint' or
@@ -345,19 +402,13 @@ def set_params(command_line_args):
     else:
         params['GENOME_OPERATIONS'] = False
 
-    # Set problem specifics
-    params['GRAMMAR_FILE'], \
-    params['ALTERNATE'] = set_fitness_params(params['PROBLEM'], params)
-
-    # Set Grammar File
-    params['BNF_GRAMMAR'] = grammar.Grammar(params['GRAMMAR_FILE'])
-    
-    # Set Fitness Function
-    params['FITNESS_FUNCTION'] = set_fitness_function(params['PROBLEM'],
-                                                      params['ALTERNATE'])
-
     # Initialise run lists and folders
     initialise_run_params()
 
-    # Set correct param imports for specified function options
+    # Set correct param imports for specified function options, including
+    # error metrics and fitness functions.
     set_param_imports()
+    
+    # Parse grammar file and set grammar class.
+    params['BNF_GRAMMAR'] = grammar.Grammar("../grammars/" +
+                                            params['GRAMMAR_FILE'])
